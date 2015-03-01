@@ -28,6 +28,7 @@ class Profile(ndb.Model):
     mainEmail = ndb.StringProperty()
     teeShirtSize = ndb.StringProperty(default='NOT_SPECIFIED')
     conferenceKeysToAttend = ndb.StringProperty(repeated=True)
+    favoriteSessions = ndb.KeyProperty(kind='Session', repeated=True)
 
 class ProfileMiniForm(messages.Message):
     """ProfileMiniForm -- update Profile form message"""
@@ -116,7 +117,7 @@ class Speaker(ndb.Model):
 	name = ndb.StringProperty(required=True)
 
 class SpeakerForm(messages.Message):
-	""" SpeakerForm - outbound Speaker info """	
+	""" SpeakerForm - inbound/outbound Speaker info """
 	name = messages.StringField(1)
 	websafeKey = messages.StringField(2)
 
@@ -127,16 +128,20 @@ class SpeakerForms(messages.Message):
 
 class Session(ndb.Model):
 	""" Session object """
+	#NDB docs read like this is the default
+    #but the task says enable, so....
+	_use_memcache=True
 	name = ndb.StringProperty(required=True)
 	highlights = ndb.StringProperty()
 	speaker = ndb.KeyProperty(kind="Speaker")
 	duration = ndb.IntegerProperty()
+    #Since EnumProperty is in 'Alpha', use string for now
 	typeofsession = ndb.StringProperty(default='NOT_SPECIFIED')
 	date = ndb.DateProperty()
 	starttime = ndb.TimeProperty()
 
 class SessionForm(messages.Message):
-	""" SessionForm - """
+	""" SessionForm - Form for session entity"""
 	name = messages.StringField(1)
 	highlights = messages.StringField(2)
 	speaker = messages.StringField(3)
@@ -145,15 +150,23 @@ class SessionForm(messages.Message):
 	date = messages.StringField(6)
 	starttime = messages.StringField(7)
 
+class SessionForms(messages.Message):
+    """
+        SessionForms - For returning multiple session forms
+    """
+    items = messages.MessageField(SessionForm, 1, repeated=True)
+
 class SpeakerQueryForm(messages.Message):
 	""" SpeakerQueryForm - inbound form for speak query """
 	name = messages.StringField(1)
 
-'''
-class SpeakerQueryForms(messages.Message):
-	""" Multiple inbound SpeakerQueryForm """
-	filters = messages.MessageField(SpeakerQueryForm, 1, repeated=True)
-'''
+class FeaturedSpeakerForm(messages.Message):
+    """
+    FeaturedSpeakerForm - for returning speaker and sessions in cache
+    """
+    speakerName = messages.StringField(1)
+    sessionNames = messages.StringField(2, repeated=True)
+
 class SessionType(messages.Enum):
 	NOT_SPECIFIED = 1
 	WORKSHOP = 2
